@@ -14,7 +14,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Write the code to the file
-function writeContent(file_path: string, content: string): void {
+function writeCodeToFile(file_path: string, content: string): void {
   try {
     fs.writeFileSync(file_path, content, "utf-8");
   } catch (error) {
@@ -23,7 +23,7 @@ function writeContent(file_path: string, content: string): void {
 }
 
 // Responsible for executing the code against a given testcase
-async function TestCaseRunner(
+async function executeTestCase(
   testcase: TestCase,
   config: LanguageConfig,
   timeLimit: number,
@@ -46,9 +46,9 @@ async function TestCaseRunner(
     });
 
     const timeoutId: NodeJS.Timeout = setTimeout(() => {
-      process.kill(ProcessSignal.ImmediateTermination);
       statusCode = CodeJudgeStatus.TIME_LIMIT_EXCEEDED;
       errMessage = "Time Limit Exceeded";
+      process.kill(ProcessSignal.ImmediateTermination);
     }, timeLimit * 1000);
 
     const intervalId: NodeJS.Timeout = setInterval(() => {
@@ -61,9 +61,9 @@ async function TestCaseRunner(
 
           maxMemoryUsed = Math.max(maxMemoryUsed, memoryUsage);
           if (memoryUsage > memoryLimit) {
-            process.kill(ProcessSignal.ImmediateTermination);
             statusCode = CodeJudgeStatus.MEMORY_LIMIT_EXCEEDED;
             errMessage = "Memory Limit Exceeded";
+            process.kill(ProcessSignal.ImmediateTermination);
           }
         });
       }
@@ -95,10 +95,10 @@ async function TestCaseRunner(
         } else if (signal == ProcessSignal.ImmediateTermination) {
           currentOutput.status = CodeJudgeStatus.RUNTIME_ERROR;
           currentOutput.error = "Runtime Error";
-        } else if (testcase.output != output.trim()) {
-          currentOutput.status = CodeJudgeStatus.WRONG_ANSWER;
-        } else {
+        } else if (testcase.output.trim() === output.trim()) {
           currentOutput.status = CodeJudgeStatus.ACCEPTED;
+        } else {
+          currentOutput.status = CodeJudgeStatus.WRONG_ANSWER;
         }
       }
 
@@ -110,7 +110,7 @@ async function TestCaseRunner(
   });
 }
 
-function runCode(
+function compileAndExecuteCode(
   language: string,
   content: string,
   test_cases: TestCase[],
@@ -118,7 +118,7 @@ function runCode(
   memoryLimit: number
 ): Promise<CodeOutput[]> {
   const config = LANGUAGE_CONFIG[language];
-  writeContent(config.file_path, content);
+  writeCodeToFile(config.file_path, content);
 
   return new Promise((resolve, _reject) => {
     exec(config.compile_command, async (err, _stdout, stderr) => {
@@ -135,6 +135,7 @@ function runCode(
             maxMemoryUsed: null,
           },
         ]);
+        return;
       }
       if (stderr) {
         resolve([
@@ -153,7 +154,7 @@ function runCode(
       // Run code against all test_cases
       const results = await Promise.all(
         test_cases.map((testcase) =>
-          TestCaseRunner(testcase, config, timeLimit, memoryLimit)
+          executeTestCase(testcase, config, timeLimit, memoryLimit)
         )
       );
 
@@ -176,6 +177,6 @@ const example_test_cases = [
   { input: "", output: "hi" },
 ];
 
-runCode("cpp", example_code, example_test_cases, 5, 256).then((res) => {
+compileAndExecuteCode("cpp", example_code, example_test_cases, 5, 256).then((res) => {
   console.log(res);
 });
