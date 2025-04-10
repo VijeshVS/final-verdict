@@ -18,6 +18,7 @@ export interface LanguageConfig {
   output_binary: string;
   compile_command: string;
   execute_command: string;
+  type: 'static' | 'dynamic'
 }
 
 export interface CodeWork {
