@@ -13,6 +13,21 @@ export async function judge(
 ): Promise<CodeOutput[]> {
   const config = LANGUAGE_CONFIG[language];
 
+  // prevent fork bombing
+  if(content.includes('fork')) {
+    return [
+      {
+        input: "",
+        expected_output: "",
+        observed_output: "",
+        status: CodeJudgeStatus.RUNTIME_ERROR,
+        error: "fork bombing detected !!",
+        timeTaken: null,
+        maxMemoryUsed: null,
+      },
+    ];
+  }
+
   writeCodeToFile(config.file_path, content);
 
   // Compile the code for statically typed lang

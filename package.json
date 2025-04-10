@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "tsc -b && node dist/index.js"
+    "start": "tsc -b && node dist/index.js",
+    "server": "tsc -b && node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "typescript": "^5.0.0",
+    "@types/express": "^5.0.1",
     "amqplib": "^0.10.5",
     "dotenv": "^16.4.7",
+    "express": "^5.1.0",
     "redis": "^4.7.0"
   },
   "devDependencies": {
